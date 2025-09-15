@@ -1,12 +1,20 @@
-﻿using UnityEngine;
+﻿using HCT.Scripts.Services;
+using Zenject;
 
 namespace HCT.Scripts.Core
 {
-    public class Bootstrapper : MonoBehaviour
+    public class Bootstrapper : IInitializable
     {
-        private void Start()
+        private readonly ILoggerService _loggerService;
+
+        public Bootstrapper(ILoggerService loggerService)
         {
-            Debug.Log("Game started!");
+            _loggerService = loggerService;
+        }
+
+        public void Initialize()
+        {
+            _loggerService.LogInfo("Игра загружается!");
         }
     }
 }
