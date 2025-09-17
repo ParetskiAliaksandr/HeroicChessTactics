@@ -2,6 +2,7 @@
 using Zenject;
 using HCT.Scripts.Core;
 using HCT.Scripts.Services;
+using HCT.Scripts.Services.SceneManagement;
 
 namespace HCT.Scripts.Installers
 {
@@ -10,6 +11,8 @@ namespace HCT.Scripts.Installers
         public override void InstallBindings()
         {
             Container.Bind<ILoggerService>().To<LoggerService>().AsSingle();
+            Container.Bind<ISceneLoaderService>().To<SceneLoaderService>().AsSingle();
+            Container.Bind<ISceneFlowController>().To<SceneFlowController>().AsSingle();
             Container.BindInterfacesAndSelfTo<Bootstrapper>().AsSingle();
         }
     }
