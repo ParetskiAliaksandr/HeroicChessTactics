@@ -18,7 +18,7 @@ namespace HCT.Scripts.Core
         public void Initialize()
         {
             _loggerService.LogInfo("Здесь будет сцена загрузки с UI отображением процента загрузки игры...");
-            _sceneFlowController.LoadMainMenuScene();
+            _sceneFlowController.LoadScene("MainMenu");
         }
     }
 }

@@ -2,6 +2,6 @@
 {
     public interface ISceneFlowController
     {
-        public void LoadMainMenuScene();
+        public void LoadScene(string key);
     }
 }
