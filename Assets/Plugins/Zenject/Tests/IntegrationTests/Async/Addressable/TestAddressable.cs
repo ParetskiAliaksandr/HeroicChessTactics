@@ -38,7 +38,18 @@ public class TestAddressable : ZenjectIntegrationTestFixture
                 Assert.Greater(locationsHandle.Result.Count, 0, "Key required for test is not configured. Check Readme.txt in addressable test folder");
 
                 IResourceLocation location = locationsHandle.Result[0];
-                handle = Addressables.LoadAsset<GameObject>(location);
+                Addressables.LoadAssetAsync<GameObject>("MyKey").Completed += handle =>
+                {
+                    if (handle.Status == UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationStatus.Succeeded)
+                    {
+                        var asset = handle.Result;
+                        Debug.Log("Successfully uploaded " + asset.name);
+                    }
+                    else
+                    {
+                        Debug.LogError("Loading error Addressable");
+                    }
+                };
                 await handle.Task;
                 return handle.Result;
             }
@@ -146,7 +157,7 @@ public class TestAddressable : ZenjectIntegrationTestFixture
         {
             locationsHandle = Addressables.LoadResourceLocationsAsync("TestAddressablePrefab");
         }
-        catch (Exception e)
+        catch (Exception)
         {
             Assert.Inconclusive("You need to set TestAddressablePrefab key to run this test");
             yield break;
