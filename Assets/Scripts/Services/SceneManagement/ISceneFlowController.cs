@@ -1,7 +1,9 @@
-﻿namespace HCT.Scripts.Services.SceneManagement
+﻿using System.Threading.Tasks;
+
+namespace HCT.Scripts.Services.SceneManagement
 {
     public interface ISceneFlowController
     {
-        public void LoadScene(string key);
+        Task LoadSceneAsync(string key);
     }
 }

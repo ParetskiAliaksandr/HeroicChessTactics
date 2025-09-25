@@ -1,12 +1,15 @@
-﻿using UnityEngine.SceneManagement;
+﻿using System.Threading.Tasks;
+using UnityEngine.SceneManagement;
 
 namespace HCT.Scripts.Services
 {
     public class SceneLoaderService : ISceneLoaderService
     {
-        public void LoadScene(string sceneName)
+        public async Task LoadSceneAsync(string sceneName)
         {
-            SceneManager.LoadSceneAsync(sceneName);
+            var operation = SceneManager.LoadSceneAsync(sceneName);
+            while (!operation.isDone)
+                await Task.Yield();
         }
     }
 }

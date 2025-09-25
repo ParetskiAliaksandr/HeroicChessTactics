@@ -1,23 +1,24 @@
-﻿using HCT.Scripts.Config.ConfigManagement;
+﻿using HCT.Scripts.Services.ConfigManagement;
+using System.Threading.Tasks;
 
 namespace HCT.Scripts.Services.SceneManagement
 {
     public class SceneFlowController : ISceneFlowController
     {
         private readonly ISceneLoaderService _sceneLoaderService;
-        private readonly GameConfig _gameConfig;
+        private readonly IConfigService _configService;
         private readonly ILoggerService _logger;
 
-        public SceneFlowController(ISceneLoaderService sceneLoaderService, GameConfig gameConfig, ILoggerService logger)
+        public SceneFlowController(ISceneLoaderService sceneLoaderService, IConfigService configService, ILoggerService logger)
         {
             _sceneLoaderService = sceneLoaderService;
-            _gameConfig = gameConfig;
+            _configService = configService;
             _logger = logger;
         }
 
-        public void LoadScene(string key)
+        public async Task LoadSceneAsync(string key)
         {
-            string sceneName = _gameConfig.SceneConfig.GetSceneName(key);
+            string sceneName = _configService.GameConfig.SceneConfig.GetSceneName(key);
 
             if (string.IsNullOrEmpty(sceneName))
             {
@@ -26,7 +27,7 @@ namespace HCT.Scripts.Services.SceneManagement
             }
 
             _logger.LogInfo($"[SceneFlow] Загружаем сцену '{sceneName}' по ключу '{key}'");
-            _sceneLoaderService.LoadScene(sceneName);
+            await _sceneLoaderService.LoadSceneAsync(sceneName);
         }
     }
 }

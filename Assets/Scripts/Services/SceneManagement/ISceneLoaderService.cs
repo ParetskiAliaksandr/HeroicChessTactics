@@ -1,9 +1,9 @@
-﻿
+﻿using System.Threading.Tasks;
 
 namespace HCT.Scripts.Services
 {
     public interface ISceneLoaderService
     {
-        public void LoadScene(string sceneName);
+        Task LoadSceneAsync(string sceneName);
     }
 }

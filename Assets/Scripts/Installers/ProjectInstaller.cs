@@ -1,4 +1,6 @@
+using Assets.Scripts.Services.ConfigManagement;
 using HCT.Scripts.Services;
+using HCT.Scripts.Services.ConfigManagement;
 using HCT.Scripts.Services.SceneManagement;
 using Zenject;
 
@@ -11,6 +13,10 @@ namespace HCT.Scripts.Installers
             Container.Bind<ILoggerService>().To<LoggerService>().AsSingle();
             Container.Bind<ISceneLoaderService>().To<SceneLoaderService>().AsSingle();
             Container.Bind<ISceneFlowController>().To<SceneFlowController>().AsSingle();
+
+            // ConfigLoaderService создаётся тут и используется ConfigService
+            Container.Bind<ConfigLoaderService>().AsSingle();
+            Container.Bind<IConfigService>().To<ConfigService>().AsSingle();
         }
     }
 }

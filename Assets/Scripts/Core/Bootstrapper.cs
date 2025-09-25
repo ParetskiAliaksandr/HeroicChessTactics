@@ -1,6 +1,7 @@
-﻿using HCT.Scripts.Config.ConfigManagement;
+﻿using HCT.Scripts.Services;
 using HCT.Scripts.Services.ConfigManagement;
 using HCT.Scripts.Services.SceneManagement;
+using System;
 using System.Threading.Tasks;
 using UnityEngine;
 using Zenject;
@@ -11,42 +12,33 @@ namespace HCT.Scripts.Core
     {
         private async void Start()
         {
-            await RunAsync();
+            try
+            {
+                await RunAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Bootstrapper failed: {ex}");
+            }
         }
 
         private async Task RunAsync()
         {
-            // 1. Загружаем все конфиги
-            GameConfig gameConfig = await InitializeConfigs();
+            var logger = ProjectContext.Instance.Container.Resolve<ILoggerService>();
 
-            // 2. Регистрируем их в контейнер
-            RegisterGameConfig(gameConfig);
+            logger.LogInfo("🚀 Bootstrapper: старт инициализации...");
 
-            // 3. Запускаем игру
-            StartGame();
-        }
+            logger.LogInfo("📂 Загружаем конфиги...");
+            var configService = ProjectContext.Instance.Container.Resolve<IConfigService>();
+            await configService.InitializeAsync();
+            logger.LogInfo("✅ Конфиги загружены");
 
-        private void StartGame()
-        {
+            logger.LogInfo("🎮 Загружаем сцену MainMenu...");
             var sceneFlow = ProjectContext.Instance.Container.Resolve<ISceneFlowController>();
-            sceneFlow.LoadScene("MainMenu");
-        }
+            await sceneFlow.LoadSceneAsync("MainMenu");
+            logger.LogInfo("✅ Сцена MainMenu загружена");
 
-        private void RegisterGameConfig(GameConfig gameConfig)
-        {
-            ProjectContext.Instance.Container.Bind<GameConfig>().FromInstance(gameConfig).AsSingle();
-        }
-
-        private async Task<GameConfig> InitializeConfigs()
-        {
-            Debug.Log("🚀 Bootstrapper: загружаем все конфиги...");
-
-            ConfigLoaderService configLoaderService = new ConfigLoaderService();
-            GameConfig newGameConfig = await configLoaderService.LoadConfigsAsync();
-
-            Debug.Log("✅ Bootstrapper: все конфиги загружены!");
-
-            return newGameConfig;
+            logger.LogInfo("🏁 Bootstrapper завершил работу");
         }
     }
 }

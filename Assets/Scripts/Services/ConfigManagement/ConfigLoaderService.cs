@@ -8,11 +8,9 @@ namespace HCT.Scripts.Services.ConfigManagement
     {
         public async Task<GameConfig> LoadConfigsAsync()
         {
-            var sceneConfig = Addressables.LoadAssetAsync<SceneConfigSO>("SceneConfig");
+            var sceneConfig = await Addressables.LoadAssetAsync<SceneConfigSO>("SceneConfig").Task;
 
-            await Task.WhenAll(sceneConfig.Task);
-
-            return new GameConfig(sceneConfig.Result);
+            return new GameConfig(sceneConfig);
         }
     }
 }
