@@ -10,35 +10,38 @@ namespace HCT.Scripts.Core
 {
     public class Bootstrapper : MonoBehaviour
     {
+        private IConfigService _configService;
+        private ISceneFlowController _sceneFlow;
+        private ILoggerService _logger;
+
+        [Inject]
+        public void Construct(IConfigService configService, ISceneFlowController sceneFlow,ILoggerService logger)
+        {
+            _configService = configService;
+            _sceneFlow = sceneFlow;
+            _logger = logger;
+        }
+
         private async void Start()
         {
             try
             {
-                await RunAsync();
+                _logger.LogInfo("🚀 Bootstrapper: старт инициализации...");
+
+                _logger.LogInfo("📂 Загружаем конфиги...");
+                await _configService.InitializeAsync();
+                _logger.LogInfo("✅ Конфиги загружены");
+
+                _logger.LogInfo("🎮 Загружаем сцену MainMenu...");
+                await _sceneFlow.LoadSceneAsync("MainMenu");
+                _logger.LogInfo("✅ Сцена MainMenu загружена");
+
+                _logger.LogInfo("🏁 Bootstrapper завершил работу");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Bootstrapper failed: {ex}");
+                _logger.LogError($"Bootstrapper failed: {ex}");
             }
-        }
-
-        private async Task RunAsync()
-        {
-            var logger = ProjectContext.Instance.Container.Resolve<ILoggerService>();
-
-            logger.LogInfo("🚀 Bootstrapper: старт инициализации...");
-
-            logger.LogInfo("📂 Загружаем конфиги...");
-            var configService = ProjectContext.Instance.Container.Resolve<IConfigService>();
-            await configService.InitializeAsync();
-            logger.LogInfo("✅ Конфиги загружены");
-
-            logger.LogInfo("🎮 Загружаем сцену MainMenu...");
-            var sceneFlow = ProjectContext.Instance.Container.Resolve<ISceneFlowController>();
-            await sceneFlow.LoadSceneAsync("MainMenu");
-            logger.LogInfo("✅ Сцена MainMenu загружена");
-
-            logger.LogInfo("🏁 Bootstrapper завершил работу");
         }
     }
 }
