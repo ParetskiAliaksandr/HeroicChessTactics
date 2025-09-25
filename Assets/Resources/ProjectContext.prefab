@@ -76,3 +76,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f88417f88b9e80c4ca07e3ca9f01b4a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  sceneConfigSO: {fileID: 11400000, guid: 24e86059d0736b946a087917dd3bf1e8, type: 2}
