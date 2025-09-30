@@ -1,9 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿using HCT.Scripts.Enums;
+using System.Threading.Tasks;
 
 namespace HCT.Scripts.Services.SceneManagement
 {
     public interface ISceneFlowController
     {
-        Task LoadSceneAsync(string key);
+        Task LoadSceneAsync(SceneKey key);
     }
 }

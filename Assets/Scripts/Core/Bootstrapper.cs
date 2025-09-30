@@ -1,8 +1,8 @@
-﻿using HCT.Scripts.Services;
+﻿using HCT.Scripts.Enums;
+using HCT.Scripts.Services;
 using HCT.Scripts.Services.ConfigManagement;
 using HCT.Scripts.Services.SceneManagement;
 using System;
-using System.Threading.Tasks;
 using UnityEngine;
 using Zenject;
 
@@ -26,21 +26,21 @@ namespace HCT.Scripts.Core
         {
             try
             {
-                _logger.LogInfo("🚀 Bootstrapper: старт инициализации...");
+                _logger.LogInfo("🚀 [Bootstrapper] Starting initialization...");
 
-                _logger.LogInfo("📂 Загружаем конфиги...");
+                _logger.LogInfo("📂 [Bootstrapper] Loading configs...");
                 await _configService.InitializeAsync();
-                _logger.LogInfo("✅ Конфиги загружены");
+                _logger.LogInfo("✅ [Bootstrapper] Configs loaded");
 
-                _logger.LogInfo("🎮 Загружаем сцену MainMenu...");
-                await _sceneFlow.LoadSceneAsync("MainMenu");
-                _logger.LogInfo("✅ Сцена MainMenu загружена");
+                _logger.LogInfo("🎮 [Bootstrapper] Loading the MainMenu scene...");
+                await _sceneFlow.LoadSceneAsync(SceneKey.MainMenu);
+                _logger.LogInfo("✅ [Bootstrapper] MainMenu scene is loaded");
 
-                _logger.LogInfo("🏁 Bootstrapper завершил работу");
+                _logger.LogInfo("🏁 [Bootstrapper] Bootstrapper has completed its work.");
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Bootstrapper failed: {ex}");
+                _logger.LogError($" [Bootstrapper] Bootstrapper failed: {ex}");
             }
         }
     }

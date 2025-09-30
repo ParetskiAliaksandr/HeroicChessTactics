@@ -1,3 +1,4 @@
+using HCT.Scripts.Enums;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,13 +10,13 @@ public class SceneConfigSO : ScriptableObject
     [Serializable]
     public class SceneReference
     {
-        public string Key;
+        public SceneKey Key;
         public string SceneName;
     }
 
     [SerializeField] private List<SceneReference> scenes;
 
-    private Dictionary<string, string> _sceneMap;
+    private Dictionary<SceneKey, string> _sceneMap;
 
     private void OnEnable()
     {
@@ -24,7 +25,7 @@ public class SceneConfigSO : ScriptableObject
 
     private void BuildSceneMap()
     {
-        _sceneMap = new Dictionary<string, string>();
+        _sceneMap = new Dictionary<SceneKey, string>();
 
         foreach (SceneReference scene in scenes)
         {
@@ -38,7 +39,7 @@ public class SceneConfigSO : ScriptableObject
         }
     }
 
-    public string GetSceneName(string key)
+    public string GetSceneName(SceneKey key)
     {
         if (_sceneMap.TryGetValue(key, out string sceneName))
         {

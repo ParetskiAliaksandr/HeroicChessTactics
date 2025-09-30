@@ -11,10 +11,10 @@ namespace HCT.Scripts.Installers
         public override void InstallBindings()
         {
             Container.Bind<ILoggerService>().To<LoggerService>().AsSingle();
+
             Container.Bind<ISceneLoaderService>().To<SceneLoaderService>().AsSingle();
             Container.Bind<ISceneFlowController>().To<SceneFlowController>().AsSingle();
 
-            // ConfigLoaderService создаётся тут и используется ConfigService
             Container.Bind<ConfigLoaderService>().AsSingle();
             Container.Bind<IConfigService>().To<ConfigService>().AsSingle();
         }

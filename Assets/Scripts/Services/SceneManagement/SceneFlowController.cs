@@ -1,4 +1,5 @@
-﻿using HCT.Scripts.Services.ConfigManagement;
+﻿using HCT.Scripts.Enums;
+using HCT.Scripts.Services.ConfigManagement;
 using System.Threading.Tasks;
 
 namespace HCT.Scripts.Services.SceneManagement
@@ -16,17 +17,17 @@ namespace HCT.Scripts.Services.SceneManagement
             _logger = logger;
         }
 
-        public async Task LoadSceneAsync(string key)
+        public async Task LoadSceneAsync(SceneKey key)
         {
             string sceneName = _configService.GameConfig.SceneConfig.GetSceneName(key);
 
             if (string.IsNullOrEmpty(sceneName))
             {
-                _logger.LogError($"[SceneFlow] Не удалось загрузить сцену по ключу '{key}'");
+                _logger.LogError($"[SceneFlow] Failed to load scene by key '{key}'");
                 return;
             }
 
-            _logger.LogInfo($"[SceneFlow] Загружаем сцену '{sceneName}' по ключу '{key}'");
+            _logger.LogInfo($"[SceneFlow] Loading scene '{sceneName}' by key '{key}'");
             await _sceneLoaderService.LoadSceneAsync(sceneName);
         }
     }
