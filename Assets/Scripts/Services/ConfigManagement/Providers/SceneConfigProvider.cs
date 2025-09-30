@@ -5,16 +5,16 @@ namespace HCT.Scripts.Services.ConfigManagement.Providers
 {
     public class SceneConfigProvider : ISceneConfigProvider
     {
-        private readonly SceneConfigSO _sceneConfigSO;
+        private readonly IConfigService _configService;
 
-        public SceneConfigProvider(ISceneConfigeProvader configService)
+        public SceneConfigProvider(IConfigService configService)
         {
-            _sceneConfigSO = configService.GameConfig.SceneConfigSO;
+            _configService = configService;
         }
 
         public string GetSceneName(SceneKey sceneKey)
         {
-            return _sceneConfigSO.GetSceneName(sceneKey);
+            return _configService.GameConfig.SceneConfigSO.GetSceneName(sceneKey);
         }
     }
 }
