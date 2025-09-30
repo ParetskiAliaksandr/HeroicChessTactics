@@ -1,5 +1,5 @@
 ﻿using HCT.Scripts.Enums;
-using HCT.Scripts.Services.ConfigManagement;
+using HCT.Scripts.Services.ConfigManagement.Providers;
 using System.Threading.Tasks;
 
 namespace HCT.Scripts.Services.SceneManagement
@@ -7,19 +7,19 @@ namespace HCT.Scripts.Services.SceneManagement
     public class SceneFlowController : ISceneFlowController
     {
         private readonly ISceneLoaderService _sceneLoaderService;
-        private readonly IConfigService _configService;
+        private readonly ISceneConfigProvider _configProvider;
         private readonly ILoggerService _logger;
 
-        public SceneFlowController(ISceneLoaderService sceneLoaderService, IConfigService configService, ILoggerService logger)
+        public SceneFlowController(ISceneLoaderService sceneLoaderService, ISceneConfigProvider configProvider, ILoggerService logger)
         {
             _sceneLoaderService = sceneLoaderService;
-            _configService = configService;
+            _configProvider = configProvider;
             _logger = logger;
         }
 
         public async Task LoadSceneAsync(SceneKey key)
         {
-            string sceneName = _configService.GameConfig.SceneConfig.GetSceneName(key);
+            string sceneName = _configProvider.GetSceneName(key);
 
             if (string.IsNullOrEmpty(sceneName))
             {

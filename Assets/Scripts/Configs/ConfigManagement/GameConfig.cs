@@ -2,11 +2,11 @@
 {
     public class GameConfig
     {
-        public SceneConfigSO SceneConfig { get; private set; }
+        public SceneConfigSO SceneConfigSO { get; private set; }
 
         public GameConfig(SceneConfigSO sceneConfig)
         {
-            SceneConfig = sceneConfig;
+            SceneConfigSO = sceneConfig;
         }
     }
 }

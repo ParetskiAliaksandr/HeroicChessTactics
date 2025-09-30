@@ -1,6 +1,7 @@
 using Assets.Scripts.Services.ConfigManagement;
 using HCT.Scripts.Services;
 using HCT.Scripts.Services.ConfigManagement;
+using HCT.Scripts.Services.ConfigManagement.Providers;
 using HCT.Scripts.Services.SceneManagement;
 using Zenject;
 
@@ -17,6 +18,7 @@ namespace HCT.Scripts.Installers
 
             Container.Bind<ConfigLoaderService>().AsSingle();
             Container.Bind<IConfigService>().To<ConfigService>().AsSingle();
+            Container.Bind<ISceneConfigProvider>().To<SceneConfigProvider>().AsSingle();
         }
     }
 }
