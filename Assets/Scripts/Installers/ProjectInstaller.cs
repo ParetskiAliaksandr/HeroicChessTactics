@@ -1,6 +1,5 @@
-using Assets.Scripts.Services.ConfigManagement;
-using HCT.Scripts.Services;
 using HCT.Scripts.Services.ConfigManagement;
+using HCT.Scripts.Services;
 using HCT.Scripts.Services.ConfigManagement.Providers;
 using HCT.Scripts.Services.SceneManagement;
 using Zenject;

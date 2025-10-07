@@ -1,18 +1,121 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace HCT.Scripts.Services
 {
     public class SceneLoaderService : ISceneLoaderService
     {
-        public async Task LoadSceneAsync(string sceneName)
+        public async Task LoadSceneAdditive(string sceneName, IProgress<float> progress = null, CancellationToken token = default)
         {
-            var operation = SceneManager.LoadSceneAsync(sceneName);
+            if (string.IsNullOrEmpty(sceneName))
+                throw new ArgumentException("sceneName is null or empty", nameof(sceneName));
 
-            while (!operation.isDone)
+            // If already loaded - skip
+            var existing = SceneManager.GetSceneByName(sceneName);
+            if (existing.IsValid() && existing.isLoaded)
             {
+                progress?.Report(1f);
+                return;
+            }
+
+            var op = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+            if (op == null)
+                throw new InvalidOperationException($"Failed to start loading scene '{sceneName}'. Check Build Settings or Addressables.");
+
+            op.allowSceneActivation = true; // default; controlled version will set false itself
+
+            float lastReported = -1f;
+            var lastReportTime = DateTime.UtcNow;
+            var minInterval = TimeSpan.FromMilliseconds(80);
+            const float minDelta = 0.01f;
+
+            try
+            {
+                while (!op.isDone)
+                {
+                    token.ThrowIfCancellationRequested();
+
+                    float raw = op.progress;
+                    float normalized = (raw >= 0.9f) ? 1f : Mathf.Clamp01(raw / 0.9f);
+
+                    var now = DateTime.UtcNow;
+                    bool changedEnough = Mathf.Abs(normalized - lastReported) >= minDelta;
+                    bool timeElapsed = (now - lastReportTime) >= minInterval;
+
+                    if (changedEnough || timeElapsed)
+                    {
+                        progress?.Report(normalized);
+                        Debug.Log($"[SceneLoaderService] {sceneName} op.progress={raw:F3}, normalized={normalized:F3}, isDone={op.isDone}");
+                        lastReported = normalized;
+                        lastReportTime = now;
+                    }
+
+                    await Task.Yield();
+                }
+
+                if (lastReported < 1f)
+                {
+                    progress?.Report(1f);
+                    Debug.Log($"[SceneLoaderService] {sceneName} finished load, isDone={op.isDone}");
+                }
+            }
+
+            catch (OperationCanceledException)
+            {
+                // if cancellation requested, try to unload the scene if it got into manager
+                if (SceneManager.GetSceneByName(sceneName).IsValid())
+                    _ = SceneManager.UnloadSceneAsync(sceneName);
+
+                throw;
+            }
+        }
+
+        public async Task LoadSceneAsync(string sceneName, IProgress<float> progress = null, CancellationToken token = default)
+        {
+            // similar to additive but LoadSceneMode.Single
+            var op = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+            if (op == null)
+                throw new InvalidOperationException($"Failed to start loading scene '{sceneName}'.");
+
+            try
+            {
+                while (!op.isDone)
+                {
+                    token.ThrowIfCancellationRequested();
+                    progress?.Report(Mathf.Clamp01(op.progress));
+                    await Task.Yield();
+                }
+                progress?.Report(1f);
+            }
+            catch (OperationCanceledException)
+            {
+                // can't unload single easily; just rethrow
+                throw;
+            }
+        }
+
+        public async Task UnloadSceneAsync(string sceneName, CancellationToken token = default)
+        {
+            if (string.IsNullOrEmpty(sceneName))
+                return;
+
+            var scene = SceneManager.GetSceneByName(sceneName);
+            if (!scene.IsValid() || !scene.isLoaded)
+                return;
+
+            var op = SceneManager.UnloadSceneAsync(sceneName);
+            if (op == null)
+                return;
+
+            while (!op.isDone)
+            {
+                token.ThrowIfCancellationRequested();
                 await Task.Yield();
             }
         }
     }
 }
+
