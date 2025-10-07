@@ -1,6 +1,10 @@
 ﻿using HCT.Scripts.Enums;
 using HCT.Scripts.Services.ConfigManagement.Providers;
+using System;
+using System.Threading;
 using System.Threading.Tasks;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace HCT.Scripts.Services.SceneManagement
 {
@@ -10,6 +14,8 @@ namespace HCT.Scripts.Services.SceneManagement
         private readonly ISceneConfigProvider _configProvider;
         private readonly ILoggerService _logger;
 
+        private readonly SemaphoreSlim _sceneOpLock = new SemaphoreSlim(1, 1);
+
         public SceneFlowController(ISceneLoaderService sceneLoaderService, ISceneConfigProvider configProvider, ILoggerService logger)
         {
             _sceneLoaderService = sceneLoaderService;
@@ -17,18 +23,160 @@ namespace HCT.Scripts.Services.SceneManagement
             _logger = logger;
         }
 
-        public async Task LoadSceneAsync(SceneKey key)
+        public async Task<bool> LoadSceneAdditive(SceneKey targetKey, IProgress<float> progress = null, CancellationToken token = default)
+        {
+            string sceneName = _configProvider.GetSceneName(targetKey);
+            if (string.IsNullOrEmpty(sceneName))
+            {
+                _logger.LogError($"[SceneFlow] LoadSceneAdditive: scene name for key '{targetKey}' is null or empty.");
+                return false;
+            }
+
+            await _sceneOpLock.WaitAsync(token);
+            try
+            {
+                var existing = SceneManager.GetSceneByName(sceneName);
+                if (existing.IsValid() && existing.isLoaded)
+                {
+                    _logger.LogInfo($"[SceneFlow] Scene '{sceneName}' already loaded.");
+                    progress?.Report(1f);
+                    return true;
+                }
+
+                _logger.LogInfo($"[SceneFlow] Loading (additive) '{sceneName}'...");
+                try
+                {
+                    IProgress<float> progressReporter = new Progress<float>(p =>
+                    {
+                        _logger.LogInfo($"[SceneFlow] progress: {p:F2} ({Mathf.RoundToInt(p * 100)}%)");
+                        // UI loader 
+                    });
+
+                    await _sceneLoaderService.LoadSceneAdditive(sceneName, progressReporter, token);
+
+                    var loaded = SceneManager.GetSceneByName(sceneName);
+                    if (loaded.IsValid() && loaded.isLoaded)
+                    {
+                        // Не делай LoadScreen активной (обычно)
+                        if (targetKey != SceneKey.LoadScreen)
+                        {
+                            SceneManager.SetActiveScene(loaded);
+                            _logger.LogInfo($"[SceneFlow] SetActiveScene -> {sceneName}");
+                        }
+
+                        _logger.LogInfo($"[SceneFlow] Scene '{sceneName}' loaded successfully.");
+                        return true;
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"[SceneFlow] Scene '{sceneName}' finished loading but not marked loaded.");
+                        return false;
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger.LogWarning($"[SceneFlow] Loading of '{sceneName}' canceled.");
+                    // best-effort unload:
+                    if (SceneManager.GetSceneByName(sceneName).IsValid())
+                    {
+                        try { await _sceneLoaderService.UnloadSceneAsync(sceneName); } catch { }
+                    }
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"[SceneFlow] Failed loading '{sceneName}': {ex}");
+                    try { if (SceneManager.GetSceneByName(sceneName).IsValid()) await _sceneLoaderService.UnloadSceneAsync(sceneName); } catch { }
+                    return false;
+                }
+            }
+            finally
+            {
+                _sceneOpLock.Release();
+            }
+        }
+
+        // --- Новый метод UnloadScene, возвращает bool и принимает CancellationToken ---
+        public async Task<bool> UnloadScene(SceneKey key, CancellationToken token = default)
         {
             string sceneName = _configProvider.GetSceneName(key);
 
             if (string.IsNullOrEmpty(sceneName))
             {
-                _logger.LogError($"[SceneFlow] Failed to load scene by key '{key}'");
-                return;
+                _logger.LogWarning($"[SceneFlow] UnloadScene called with invalid key '{key}' (no scene name).");
+                return false;
             }
 
-            _logger.LogInfo($"[SceneFlow] Loading scene '{sceneName}' by key '{key}'");
-            await _sceneLoaderService.LoadSceneAsync(sceneName);
+            _logger.LogInfo($"[SceneFlow] Unloading scene '{sceneName}' (key: {key})...");
+
+            // Входим в общий семафор, чтобы не было параллельных операций сцен
+            await _sceneOpLock.WaitAsync(token);
+            try
+            {
+                var scene = SceneManager.GetSceneByName(sceneName);
+
+                // Если сцена не валидна или не загружена — считаем операцию успешной (ничего не нужно делать)
+                if (!scene.IsValid() || !scene.isLoaded)
+                {
+                    _logger.LogInfo($"[SceneFlow] Scene '{sceneName}' is not loaded or not valid. Nothing to unload.");
+                    return true;
+                }
+
+                // Если сцена активная — переключаем ActiveScene на другой загруженный
+                var activeScene = SceneManager.GetActiveScene();
+                if (activeScene.IsValid() && activeScene.name == sceneName)
+                {
+                    Scene fallback = default;
+                    for (int i = 0; i < SceneManager.sceneCount; i++)
+                    {
+                        var s = SceneManager.GetSceneAt(i);
+                        if (s.IsValid() && s.isLoaded && s.name != sceneName)
+                        {
+                            fallback = s;
+                            break;
+                        }
+                    }
+
+                    if (fallback.IsValid())
+                    {
+                        SceneManager.SetActiveScene(fallback);
+                        _logger.LogInfo($"[SceneFlow] Active scene was '{sceneName}'. Switched active scene to '{fallback.name}' before unload.");
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"[SceneFlow] Active scene '{sceneName}' will be unloaded but no other loaded scene found to switch to.");
+                    }
+                }
+
+                try
+                {
+                    // Передаём токен дальше в low-level Unload, чтобы можно было отменить
+                    await _sceneLoaderService.UnloadSceneAsync(sceneName, token);
+                    _logger.LogInfo($"[SceneFlow] Scene '{sceneName}' unloaded successfully.");
+                    return true;
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger.LogWarning($"[SceneFlow] Unload of scene '{sceneName}' was canceled.");
+                    // При отмене пробуем best-effort оставить систему в консистентном состоянии
+                    return false;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"[SceneFlow] Failed to unload scene '{sceneName}': {ex}");
+                    return false;
+                }
+            }
+            finally
+            {
+                _sceneOpLock.Release();
+            }
+        }
+
+        public void Dispose()
+        {
+            _sceneOpLock?.Dispose();
         }
     }
 }
+

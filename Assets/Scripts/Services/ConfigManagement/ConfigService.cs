@@ -2,7 +2,7 @@
 using HCT.Scripts.Services.ConfigManagement;
 using System.Threading.Tasks;
 
-namespace Assets.Scripts.Services.ConfigManagement
+namespace HCT.Scripts.Services.ConfigManagement
 {
     public class ConfigService : IConfigService
     {
