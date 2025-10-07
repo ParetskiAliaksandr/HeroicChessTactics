@@ -13,5 +13,9 @@ MonoBehaviour:
   m_Name: SceneConfig
   m_EditorClassIdentifier: 
   scenes:
-  - Key: MainMenu
+  - Key: 2
     SceneName: MainMenuScene
+  - Key: 1
+    SceneName: LoadScreenScene
+  - Key: 0
+    SceneName: BootScene

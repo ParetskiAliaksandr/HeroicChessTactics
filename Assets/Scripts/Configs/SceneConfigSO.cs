@@ -1,41 +1,37 @@
-using HCT.Scripts.Services;
+using HCT.Scripts.Enums;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Zenject;
+
 
 [CreateAssetMenu(fileName = "SceneConfig", menuName = "Configs/SceneConfig")]
-public class SceneConfigSO : ScriptableObject 
+public class SceneConfigSO : ScriptableObject
 {
-    [Serializable] public class SceneReference
+    [Serializable]
+    public class SceneReference
     {
-        public string Key;
+        public SceneKey Key;
         public string SceneName;
     }
 
     [SerializeField] private List<SceneReference> scenes;
 
-    private Dictionary<string, string> _sceneMap;
+    private Dictionary<SceneKey, string> _sceneMap;
 
-    [Inject] private ILoggerService _loggerService;
-
-    [Inject]
-    public void Initialize(ILoggerService logger)
+    private void OnEnable()
     {
-        _loggerService = logger;
-
         BuildSceneMap();
     }
 
     private void BuildSceneMap()
     {
-        _sceneMap = new Dictionary<string, string>();
+        _sceneMap = new Dictionary<SceneKey, string>();
 
         foreach (SceneReference scene in scenes)
         {
             if (_sceneMap.ContainsKey(scene.Key))
             {
-                _loggerService.LogError($"[SceneConfig] Duplicate key '{scene.Key}' ignored");
+                Debug.LogError($"[SceneConfig] Duplicate key '{scene.Key}' ignored");
                 continue;
             }
 
@@ -43,14 +39,14 @@ public class SceneConfigSO : ScriptableObject
         }
     }
 
-    public string GetSceneName(string key)
+    public string GetSceneName(SceneKey key)
     {
         if (_sceneMap.TryGetValue(key, out string sceneName))
         {
             return sceneName;
         }
 
-        _loggerService.LogError($"[SceneConfig] Scene with key '{key}' does not exist");
+        Debug.LogError($"[SceneConfig] Scene with key '{key}' does not exist");
         return null;
     }
 }
