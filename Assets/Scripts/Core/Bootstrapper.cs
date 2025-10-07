@@ -33,7 +33,7 @@ namespace HCT.Scripts.Core
         {
             _cts = new CancellationTokenSource();
 
-            _ = InitializeAsync(_cts.Token); // discard task, но обрабатываем исключения внутри
+            _ = InitializeAsync(_cts.Token); 
         }
 
         private async Task InitializeAsync(CancellationToken token)
@@ -78,7 +78,6 @@ namespace HCT.Scripts.Core
 
         private void OnDestroy()
         {
-            // При уничтожении Bootstrapper'а отменяем загрузку, чтобы не оставалось частично загруженных сцен
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = null;

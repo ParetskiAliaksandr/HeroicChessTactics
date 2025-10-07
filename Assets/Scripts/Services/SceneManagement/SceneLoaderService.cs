@@ -11,9 +11,10 @@ namespace HCT.Scripts.Services
         public async Task LoadSceneAdditive(string sceneName, IProgress<float> progress = null, CancellationToken token = default)
         {
             if (string.IsNullOrEmpty(sceneName))
+            {
                 throw new ArgumentException("sceneName is null or empty", nameof(sceneName));
-
-            // If already loaded - skip
+            }
+               
             var existing = SceneManager.GetSceneByName(sceneName);
             if (existing.IsValid() && existing.isLoaded)
             {
@@ -25,7 +26,7 @@ namespace HCT.Scripts.Services
             if (op == null)
                 throw new InvalidOperationException($"Failed to start loading scene '{sceneName}'. Check Build Settings or Addressables.");
 
-            op.allowSceneActivation = true; // default; controlled version will set false itself
+            op.allowSceneActivation = true;
 
             float lastReported = -1f;
             var lastReportTime = DateTime.UtcNow;
@@ -65,7 +66,6 @@ namespace HCT.Scripts.Services
 
             catch (OperationCanceledException)
             {
-                // if cancellation requested, try to unload the scene if it got into manager
                 if (SceneManager.GetSceneByName(sceneName).IsValid())
                     _ = SceneManager.UnloadSceneAsync(sceneName);
 
@@ -75,7 +75,6 @@ namespace HCT.Scripts.Services
 
         public async Task LoadSceneAsync(string sceneName, IProgress<float> progress = null, CancellationToken token = default)
         {
-            // similar to additive but LoadSceneMode.Single
             var op = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
             if (op == null)
                 throw new InvalidOperationException($"Failed to start loading scene '{sceneName}'.");
@@ -92,7 +91,6 @@ namespace HCT.Scripts.Services
             }
             catch (OperationCanceledException)
             {
-                // can't unload single easily; just rethrow
                 throw;
             }
         }

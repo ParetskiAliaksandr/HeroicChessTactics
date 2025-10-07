@@ -57,7 +57,6 @@ namespace HCT.Scripts.Services.SceneManagement
                     var loaded = SceneManager.GetSceneByName(sceneName);
                     if (loaded.IsValid() && loaded.isLoaded)
                     {
-                        // Не делай LoadScreen активной (обычно)
                         if (targetKey != SceneKey.LoadScreen)
                         {
                             SceneManager.SetActiveScene(loaded);
@@ -76,7 +75,7 @@ namespace HCT.Scripts.Services.SceneManagement
                 catch (OperationCanceledException)
                 {
                     _logger.LogWarning($"[SceneFlow] Loading of '{sceneName}' canceled.");
-                    // best-effort unload:
+                    
                     if (SceneManager.GetSceneByName(sceneName).IsValid())
                     {
                         try { await _sceneLoaderService.UnloadSceneAsync(sceneName); } catch { }
@@ -96,7 +95,6 @@ namespace HCT.Scripts.Services.SceneManagement
             }
         }
 
-        // --- Новый метод UnloadScene, возвращает bool и принимает CancellationToken ---
         public async Task<bool> UnloadScene(SceneKey key, CancellationToken token = default)
         {
             string sceneName = _configProvider.GetSceneName(key);
@@ -109,20 +107,17 @@ namespace HCT.Scripts.Services.SceneManagement
 
             _logger.LogInfo($"[SceneFlow] Unloading scene '{sceneName}' (key: {key})...");
 
-            // Входим в общий семафор, чтобы не было параллельных операций сцен
             await _sceneOpLock.WaitAsync(token);
             try
             {
                 var scene = SceneManager.GetSceneByName(sceneName);
 
-                // Если сцена не валидна или не загружена — считаем операцию успешной (ничего не нужно делать)
                 if (!scene.IsValid() || !scene.isLoaded)
                 {
                     _logger.LogInfo($"[SceneFlow] Scene '{sceneName}' is not loaded or not valid. Nothing to unload.");
                     return true;
                 }
 
-                // Если сцена активная — переключаем ActiveScene на другой загруженный
                 var activeScene = SceneManager.GetActiveScene();
                 if (activeScene.IsValid() && activeScene.name == sceneName)
                 {
@@ -150,7 +145,6 @@ namespace HCT.Scripts.Services.SceneManagement
 
                 try
                 {
-                    // Передаём токен дальше в low-level Unload, чтобы можно было отменить
                     await _sceneLoaderService.UnloadSceneAsync(sceneName, token);
                     _logger.LogInfo($"[SceneFlow] Scene '{sceneName}' unloaded successfully.");
                     return true;
@@ -158,7 +152,6 @@ namespace HCT.Scripts.Services.SceneManagement
                 catch (OperationCanceledException)
                 {
                     _logger.LogWarning($"[SceneFlow] Unload of scene '{sceneName}' was canceled.");
-                    // При отмене пробуем best-effort оставить систему в консистентном состоянии
                     return false;
                 }
                 catch (Exception ex)
