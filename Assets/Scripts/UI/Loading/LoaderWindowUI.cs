@@ -5,16 +5,8 @@ namespace HCT.Scripts.UI.Loading
 {
     public class LoaderWindowUI : MonoBehaviour
     {
-        [SerializeField] private Image _image;
+        [SerializeField] private Slider _slider;
 
-        private void OnEnable()
-        {
-            Loading();
-        }
-
-        private void Loading()
-        {
-
-        }
+        
     }
 }
