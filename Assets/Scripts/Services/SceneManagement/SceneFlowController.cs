@@ -1,5 +1,6 @@
 ﻿using HCT.Scripts.Enums;
 using HCT.Scripts.Services.ConfigManagement.Providers;
+using HCT.Scripts.Services.LoadingScreenManagement;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,14 +14,17 @@ namespace HCT.Scripts.Services.SceneManagement
         private readonly ISceneLoaderService _sceneLoaderService;
         private readonly ISceneConfigProvider _configProvider;
         private readonly ILoggerService _logger;
+        private readonly ILoadingScreenService _loadingScreenService;
 
         private readonly SemaphoreSlim _sceneOpLock = new SemaphoreSlim(1, 1);
 
-        public SceneFlowController(ISceneLoaderService sceneLoaderService, ISceneConfigProvider configProvider, ILoggerService logger)
+        public SceneFlowController(ISceneLoaderService sceneLoaderService, ISceneConfigProvider configProvider, ILoggerService logger,
+            ILoadingScreenService loadingScreenService)
         {
             _sceneLoaderService = sceneLoaderService;
             _configProvider = configProvider;
             _logger = logger;
+            _loadingScreenService = loadingScreenService;
         }
 
         public async Task<bool> LoadSceneAdditive(SceneKey targetKey, IProgress<float> progress = null, CancellationToken token = default)
@@ -50,12 +54,15 @@ namespace HCT.Scripts.Services.SceneManagement
                     return true;
                 }
 
+                _loadingScreenService.Show();
                 IProgress<float> progressReporter = new Progress<float>(p =>
                 {
-                    // _loadingScreenService?.SetProgress(p)
+                    _loadingScreenService.SetProgress(p);
                 });
 
                 await _sceneLoaderService.LoadSceneAdditive(sceneName, progressReporter, token);
+
+                _loadingScreenService.Hide();
 
                 var loaded = SceneManager.GetSceneByName(sceneName);
                 if (loaded.IsValid() && loaded.isLoaded)
