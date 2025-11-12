@@ -49,7 +49,6 @@ namespace HCT.Scripts.Services
                     if (changedEnough || timeElapsed)
                     {
                         progress?.Report(normalized);
-                        Debug.Log($"[SceneLoaderService] {sceneName} op.progress={raw:F3}, normalized={normalized:F3}, isDone={op.isDone}");
                         lastReported = normalized;
                         lastReportTime = now;
                     }
@@ -60,7 +59,6 @@ namespace HCT.Scripts.Services
                 if (lastReported < 1f)
                 {
                     progress?.Report(1f);
-                    Debug.Log($"[SceneLoaderService] {sceneName} finished load, isDone={op.isDone}");
                 }
             }
 
