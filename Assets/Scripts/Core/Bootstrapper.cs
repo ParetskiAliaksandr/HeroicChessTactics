@@ -13,7 +13,7 @@ namespace HCT.Scripts.Core
     public class Bootstrapper : MonoBehaviour
     {
         private IConfigService _configService;
-        private ISceneFlowController _sceneFlow;
+        private ISceneManagementService _sceneFlow;
         private ILoggerService _logger;
 
         private CancellationTokenSource _cts;
@@ -22,7 +22,7 @@ namespace HCT.Scripts.Core
         private bool isUnloaded = false;
 
         [Inject]
-        public void Construct(IConfigService configService, ISceneFlowController sceneFlow,ILoggerService logger)
+        public void Construct(IConfigService configService, ISceneManagementService sceneFlow,ILoggerService logger)
         {
             _configService = configService;
             _sceneFlow = sceneFlow;
@@ -33,7 +33,13 @@ namespace HCT.Scripts.Core
         {
             _cts = new CancellationTokenSource();
 
-            _ = InitializeAsync(_cts.Token); 
+            _ = InitializeAsync(_cts.Token).ContinueWith(task =>
+            {
+                if (task.IsFaulted)
+                {
+                    _logger.LogError($"❌ Initialization failed: {task.Exception}");
+                }
+            });
         }
 
         private async Task InitializeAsync(CancellationToken token)
@@ -43,7 +49,7 @@ namespace HCT.Scripts.Core
                 _logger.LogInfo("🚀 [Bootstrapper] Starting initialization...");
 
                 _logger.LogInfo("📂 [Bootstrapper] Loading configs...");
-                await _configService.InitializeAsync();
+                await _configService.InitializeAsync(token);
                 _logger.LogInfo("✅ [Bootstrapper] Configs loaded");
 
                 _logger.LogInfo("🎮 [Bootstrapper] Loading LoadScreenScene and MainMenuScene...");

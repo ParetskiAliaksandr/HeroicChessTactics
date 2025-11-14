@@ -1,5 +1,4 @@
-﻿
-using HCT.Scripts.Enums;
+﻿using HCT.Scripts.Enums;
 
 namespace HCT.Scripts.Services.ConfigManagement.Providers
 {
@@ -22,7 +21,15 @@ namespace HCT.Scripts.Services.ConfigManagement.Providers
                 return null;
             }
 
-            return _configService.GameConfig.SceneConfigSO.GetSceneName(sceneKey);
+            var name = _configService.GameConfig.SceneConfigSO.GetSceneName(sceneKey);
+
+            if (string.IsNullOrEmpty(name))
+            {
+                _loggerService.LogError($"[SceneConfigProvider] Scene name for key '{sceneKey}' is missing.");
+                return null;
+            }
+
+            return name;
         }
     }
 }

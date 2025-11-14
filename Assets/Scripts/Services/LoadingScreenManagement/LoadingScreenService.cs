@@ -33,5 +33,10 @@ namespace HCT.Scripts.Services.LoadingScreenManagement
                 _lsController = null;
             }
         }
+
+        public void ResetProgress()
+        {
+            _lsController.SetProgress(0.0f);
+        }
     }
 }

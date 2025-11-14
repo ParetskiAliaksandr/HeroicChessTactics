@@ -10,23 +10,12 @@ namespace HCT.Scripts.Services
     {
         public async Task LoadSceneAdditive(string sceneName, IProgress<float> progress = null, CancellationToken token = default)
         {
-            if (string.IsNullOrEmpty(sceneName))
-            {
-                throw new ArgumentException("sceneName is null or empty", nameof(sceneName));
-            }
-               
-            var existing = SceneManager.GetSceneByName(sceneName);
-            if (existing.IsValid() && existing.isLoaded)
-            {
-                progress?.Report(1f);
-                return;
-            }
-
             var op = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
-            if (op == null)
-                throw new InvalidOperationException($"Failed to start loading scene '{sceneName}'. Check Build Settings or Addressables.");
 
-            op.allowSceneActivation = true;
+            if (op == null)
+            {
+                throw new InvalidOperationException($"Failed to start loading scene '{sceneName}'. Check Build Settings or Addressables.");
+            }
 
             float lastReported = -1f;
             var lastReportTime = DateTime.UtcNow;
@@ -65,50 +54,27 @@ namespace HCT.Scripts.Services
             catch (OperationCanceledException)
             {
                 if (SceneManager.GetSceneByName(sceneName).IsValid())
-                    _ = SceneManager.UnloadSceneAsync(sceneName);
-
-                throw;
-            }
-        }
-
-        public async Task LoadSceneAsync(string sceneName, IProgress<float> progress = null, CancellationToken token = default)
-        {
-            var op = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
-            if (op == null)
-                throw new InvalidOperationException($"Failed to start loading scene '{sceneName}'.");
-
-            try
-            {
-                while (!op.isDone)
                 {
-                    token.ThrowIfCancellationRequested();
-                    progress?.Report(Mathf.Clamp01(op.progress));
-                    await Task.Yield();
+                    _ = SceneManager.UnloadSceneAsync(sceneName);
                 }
-                progress?.Report(1f);
-            }
-            catch (OperationCanceledException)
-            {
+
                 throw;
             }
         }
 
         public async Task UnloadSceneAsync(string sceneName, CancellationToken token = default)
         {
-            if (string.IsNullOrEmpty(sceneName))
-                return;
+            var operation = SceneManager.UnloadSceneAsync(sceneName);
 
-            var scene = SceneManager.GetSceneByName(sceneName);
-            if (!scene.IsValid() || !scene.isLoaded)
+            if (operation == null)
+            {
                 return;
+            }
 
-            var op = SceneManager.UnloadSceneAsync(sceneName);
-            if (op == null)
-                return;
-
-            while (!op.isDone)
+            while (!operation.isDone)
             {
                 token.ThrowIfCancellationRequested();
+
                 await Task.Yield();
             }
         }

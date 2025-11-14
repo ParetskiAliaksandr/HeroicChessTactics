@@ -14,7 +14,7 @@ namespace HCT.Scripts.Installers
             Container.Bind<ILoggerService>().To<LoggerService>().AsSingle();
 
             Container.Bind<ISceneLoaderService>().To<SceneLoaderService>().AsSingle();
-            Container.Bind<ISceneFlowController>().To<SceneFlowController>().AsSingle();
+            Container.Bind<ISceneManagementService>().To<SceneManagementService>().AsSingle();
             Container.Bind<ILoadingScreenService>().To<LoadingScreenService>().AsSingle();
 
             Container.Bind<ConfigLoaderService>().AsSingle();

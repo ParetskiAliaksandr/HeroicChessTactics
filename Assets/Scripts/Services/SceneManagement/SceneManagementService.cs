@@ -9,40 +9,42 @@ using UnityEngine.SceneManagement;
 
 namespace HCT.Scripts.Services.SceneManagement
 {
-    public class SceneFlowController : ISceneFlowController
+    public class SceneManagementService : ISceneManagementService
     {
         private readonly ISceneLoaderService _sceneLoaderService;
-        private readonly ISceneConfigProvider _configProvider;
+        private readonly ISceneConfigProvider _sceneConfigProvider;
         private readonly ILoggerService _logger;
         private readonly ILoadingScreenService _loadingScreenService;
 
         private readonly SemaphoreSlim _sceneOpLock = new SemaphoreSlim(1, 1);
 
-        public SceneFlowController(ISceneLoaderService sceneLoaderService, ISceneConfigProvider configProvider, ILoggerService logger,
+        public SceneManagementService(ISceneLoaderService sceneLoaderService, ISceneConfigProvider sceneConfigProvider, ILoggerService logger,
             ILoadingScreenService loadingScreenService)
         {
             _sceneLoaderService = sceneLoaderService;
-            _configProvider = configProvider;
+            _sceneConfigProvider = sceneConfigProvider;
             _logger = logger;
             _loadingScreenService = loadingScreenService;
         }
 
         public async Task<bool> LoadSceneAdditive(SceneKey targetKey, IProgress<float> progress = null, CancellationToken token = default)
         {
-            string sceneName = _configProvider.GetSceneName(targetKey);
-            if (string.IsNullOrEmpty(sceneName))
+            string sceneName = _sceneConfigProvider.GetSceneName(targetKey);
+
+            if (sceneName == null)
             {
-                _logger.LogError($"[SceneFlow] LoadSceneAdditive: scene name for key '{targetKey}' is null or empty.");
                 return false;
             }
 
             await _sceneOpLock.WaitAsync(token);
+
             try
             {
-                var existing = SceneManager.GetSceneByName(sceneName);
-                if (existing.IsValid() && existing.isLoaded)
+                Scene existingScene = SceneManager.GetSceneByName(sceneName);
+
+                if (existingScene.IsValid() && existingScene.isLoaded)
                 {
-                    _logger.LogInfo($"[SceneFlow] Scene '{sceneName}' already loaded.");
+                    _logger.LogInfo($"[SceneManagementService] Scene '{sceneName}' already loaded.");
                     progress?.Report(1f);
                     return true;
                 }
@@ -50,18 +52,17 @@ namespace HCT.Scripts.Services.SceneManagement
                 if (targetKey == SceneKey.LoadScreen)
                 {
                     await _sceneLoaderService.LoadSceneAdditive(sceneName, null, token);
-                    _logger.LogInfo($"[SceneFlow] Scene '{sceneName}' loaded (no UI access during load).");
+                    _logger.LogInfo($"[SceneManagementService] Scene '{sceneName}' loaded.");
                     return true;
                 }
 
                 _loadingScreenService.Show();
+                _loadingScreenService.ResetProgress();
                 IProgress<float> progressReporter = new Progress<float>(p =>
                 {
                     _loadingScreenService.SetProgress(p);
                 });
-
                 await _sceneLoaderService.LoadSceneAdditive(sceneName, progressReporter, token);
-
                 _loadingScreenService.Hide();
 
                 var loaded = SceneManager.GetSceneByName(sceneName);
@@ -70,13 +71,14 @@ namespace HCT.Scripts.Services.SceneManagement
                     if (targetKey != SceneKey.LoadScreen)
                     {
                         SceneManager.SetActiveScene(loaded);
-                        _logger.LogInfo($"[SceneFlow] SetActiveScene -> {sceneName}");
+                        _logger.LogInfo($"[SceneManagementService] Scene '{sceneName}' loaded");
+                        _logger.LogInfo($"[SceneManagementService] SetActiveScene -> {sceneName}");
                     }
 
                     return true;
                 }
 
-                _logger.LogWarning($"[SceneFlow] Scene '{sceneName}' finished loading but not marked loaded.");
+                _logger.LogWarning($"[SceneManagementService] Scene '{sceneName}' finished loading but not marked loaded.");
                 return false;
             }
             finally
@@ -88,64 +90,41 @@ namespace HCT.Scripts.Services.SceneManagement
 
         public async Task<bool> UnloadScene(SceneKey key, CancellationToken token = default)
         {
-            string sceneName = _configProvider.GetSceneName(key);
+            string sceneName = _sceneConfigProvider.GetSceneName(key);
 
-            if (string.IsNullOrEmpty(sceneName))
+            if (sceneName == null)
             {
-                _logger.LogWarning($"[SceneFlow] UnloadScene called with invalid key '{key}' (no scene name).");
                 return false;
             }
 
             await _sceneOpLock.WaitAsync(token);
+
             try
             {
-                var scene = SceneManager.GetSceneByName(sceneName);
+                var existingScene = SceneManager.GetSceneByName(sceneName);
 
-                if (!scene.IsValid() || !scene.isLoaded)
+                if (!existingScene.IsValid() || !existingScene.isLoaded)
                 {
-                    _logger.LogInfo($"[SceneFlow] Scene '{sceneName}' is not loaded or not valid. Nothing to unload.");
+                    _logger.LogInfo($"[SceneManagementService] Scene '{sceneName}' is not loaded or not valid. Nothing to unload.");
                     return true;
                 }
 
                 var activeScene = SceneManager.GetActiveScene();
-                if (activeScene.IsValid() && activeScene.name == sceneName)
-                {
-                    Scene fallback = default;
-                    for (int i = 0; i < SceneManager.sceneCount; i++)
-                    {
-                        var s = SceneManager.GetSceneAt(i);
-                        if (s.IsValid() && s.isLoaded && s.name != sceneName)
-                        {
-                            fallback = s;
-                            break;
-                        }
-                    }
-
-                    if (fallback.IsValid())
-                    {
-                        SceneManager.SetActiveScene(fallback);
-                        _logger.LogInfo($"[SceneFlow] Active scene was '{sceneName}'. Switched active scene to '{fallback.name}' before unload.");
-                    }
-                    else
-                    {
-                        _logger.LogWarning($"[SceneFlow] Active scene '{sceneName}' will be unloaded but no other loaded scene found to switch to.");
-                    }
-                }
 
                 try
                 {
                     await _sceneLoaderService.UnloadSceneAsync(sceneName, token);
-                    _logger.LogInfo($"[SceneFlow] Scene '{sceneName}' unloaded successfully.");
+                    _logger.LogInfo($"[SceneManagementService] Scene '{sceneName}' unloaded successfully.");
                     return true;
                 }
                 catch (OperationCanceledException)
                 {
-                    _logger.LogWarning($"[SceneFlow] Unload of scene '{sceneName}' was canceled.");
+                    _logger.LogWarning($"[SceneManagementService] Unload of scene '{sceneName}' was canceled.");
                     return false;
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"[SceneFlow] Failed to unload scene '{sceneName}': {ex}");
+                    _logger.LogError($"[SceneManagementService] Failed to unload scene '{sceneName}': {ex}");
                     return false;
                 }
             }
@@ -153,11 +132,6 @@ namespace HCT.Scripts.Services.SceneManagement
             {
                 _sceneOpLock.Release();
             }
-        }
-
-        public void Dispose()
-        {
-            _sceneOpLock?.Dispose();
         }
     }
 }

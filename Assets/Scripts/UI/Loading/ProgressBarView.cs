@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace HCT.Scripts.UI.Loading
 {
-    public class LoaderWindowUI : MonoBehaviour
+    public class ProgressBarView : MonoBehaviour
     {
         [SerializeField] private Slider _slider;
         [SerializeField] private float _fillSpeed = 4f;
@@ -20,16 +20,6 @@ namespace HCT.Scripts.UI.Loading
             _target = Mathf.Clamp01(value);
 
             if (_target <= 0f && _slider != null)
-            {
-                _slider.value = 0f;
-            }
-        }
-
-        public void ResetLoadReadings()
-        {
-            _target = 0f;
-
-            if (_slider != null)
             {
                 _slider.value = 0f;
             }

@@ -1,5 +1,5 @@
 ﻿using HCT.Scripts.Config.ConfigManagement;
-using HCT.Scripts.Services.ConfigManagement;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace HCT.Scripts.Services.ConfigManagement
@@ -14,9 +14,9 @@ namespace HCT.Scripts.Services.ConfigManagement
             _configLoaderService = configLoaderService;
         }
 
-        public async Task InitializeAsync()
+        public async Task InitializeAsync(CancellationToken token)
         {
-            GameConfig = await _configLoaderService.LoadConfigsAsync();
+            GameConfig = await _configLoaderService.LoadConfigsAsync(token);
         }
     }
 }

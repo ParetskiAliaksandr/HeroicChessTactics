@@ -11,5 +11,6 @@ namespace HCT.Scripts.Services.LoadingScreenManagement
         void Hide();
 
         void SetProgress(float value);
+        void ResetProgress();
     }
 }
