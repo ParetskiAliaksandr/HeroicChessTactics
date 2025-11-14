@@ -6,27 +6,24 @@ namespace HCT.Scripts.UI.Loading
 {
     public class LoadingScreenController : MonoBehaviour
     {
-        [SerializeField] private LoaderWindowUI _loaderWindowUI;
+        [SerializeField] private ProgressBarView _loaderWindowUI;
 
-        private ILoadingScreenService _loadingService;
+        private ILoadingScreenService _loadingScreenService;
 
         [Inject]
         public void Construct(ILoadingScreenService loadingService)
         {
-            _loadingService = loadingService;
+            _loadingScreenService = loadingService;
         }
 
         private void Start()
         {
-            _loadingService.Register(this);
-
-            //_loaderWindowUI.ResetLoadReadings();
-            //_loaderWindowUI.gameObject.SetActive(false);
+            _loadingScreenService.Register(this);
         }
 
         private void OnDisable()
         {
-            _loadingService.Unregister(this);
+            _loadingScreenService.Unregister(this);
         }
 
         public void ShowLoaderWindow()
@@ -48,11 +45,6 @@ namespace HCT.Scripts.UI.Loading
         public void SetProgress(float value)
         {
             _loaderWindowUI.SetProgress(value);
-        }
-
-        public void ResetLoadReadings()
-        {
-            _loaderWindowUI.ResetLoadReadings();
         }
     }
 }

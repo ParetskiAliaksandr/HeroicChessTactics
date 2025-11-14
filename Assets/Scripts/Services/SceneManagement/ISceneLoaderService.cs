@@ -6,7 +6,6 @@ namespace HCT.Scripts.Services
 {
     public interface ISceneLoaderService
     {
-        Task LoadSceneAsync(string sceneName, IProgress<float> progress = null, CancellationToken token = default);
         Task LoadSceneAdditive(string sceneName, IProgress<float> progress = null, CancellationToken token = default);
         Task UnloadSceneAsync(string sceneName, CancellationToken token = default);
     }

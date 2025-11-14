@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace HCT.Scripts.Services.SceneManagement
 {
-    public interface ISceneFlowController
+    public interface ISceneManagementService
     {
         Task<bool> LoadSceneAdditive(SceneKey targetKey, IProgress<float> progress = null, CancellationToken token = default);
         Task<bool> UnloadScene(SceneKey targetKey, CancellationToken token = default);
